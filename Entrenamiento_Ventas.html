@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entrenamiento de Ventas — Neural Finance</title>
+<style>
+:root{
+  --deep:#070f0a; --paper:#0d1b15; --mist:#13261c; --mist2:#182c21; --line:#26392f;
+  --ink:#eef4f0; --ink2:#a9c4b4; --muted:#7d948a;
+  --green:#57b361; --green-d:#7fd48c;
+  --gold:#e8c15a; --red:#e06a6a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;background:var(--paper);color:var(--ink);line-height:1.55}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px}
+header{background:linear-gradient(160deg,#0a1a13 0%,#152c22 60%,#1d4433 100%);padding:34px 0;border-bottom:1px solid var(--line)}
+header h1{font-size:26px;font-weight:750;margin-bottom:6px}
+header p{color:var(--ink2);font-size:14px}
+nav.tabs{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
+nav.tabs button{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600}
+nav.tabs button.active{background:var(--green);border-color:var(--green);color:#0a1a13}
+main{padding:28px 0 70px}
+.hidden{display:none !important}
+.scoreboard{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+.pill{background:var(--mist);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:12.5px;color:var(--ink2)}
+.pill b{color:var(--ink)}
+.card{background:var(--mist);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:16px}
+.qhead{font-weight:700;font-size:15px;margin-bottom:12px}
+.qnum{color:var(--green-d);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:6px}
+.opt{display:block;width:100%;text-align:left;background:var(--mist2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px;color:var(--ink);font-size:13.5px;cursor:pointer}
+.opt:hover{border-color:var(--green)}
+.opt.chosen{border-color:var(--gold);background:rgba(232,193,90,.12)}
+.opt.correct{border-color:var(--green);background:rgba(87,179,97,.16)}
+.opt.incorrect{border-color:var(--red);background:rgba(224,106,106,.14)}
+.opt[disabled]{cursor:default}
+.explain{font-size:13px;color:var(--ink2);margin-top:8px;padding:10px 12px;border-left:3px solid var(--green);background:rgba(87,179,97,.08);border-radius:0 6px 6px 0;display:none}
+.explain.show{display:block}
+.bigbtn{background:var(--green);color:#0a1a13;border:none;border-radius:8px;padding:12px 22px;font-weight:700;font-size:14px;cursor:pointer;margin-top:10px;margin-right:8px}
+.bigbtn.secondary{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.casebtn{background:var(--mist);border:1px solid var(--line);border-radius:10px;padding:16px 18px;text-align:left;cursor:pointer;color:var(--ink)}
+.casebtn:hover{border-color:var(--green)}
+.casebtn .ctitle{font-weight:700;font-size:14px;margin-bottom:4px}
+.casebtn .cpersona{font-size:12.5px;color:var(--ink2)}
+.casebtn .status{display:inline-block;margin-top:8px;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--mist2);color:var(--muted)}
+.casebtn .status.win{background:rgba(87,179,97,.18);color:var(--green-d)}
+.casebtn .status.lose{background:rgba(224,106,106,.18);color:var(--red)}
+.casebtn .tag{display:inline-block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--gold);margin-bottom:6px}
+.bubble{background:var(--mist2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:16px 0}
+.bubble .who{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;margin-left:8px}
+.badge.ideal{background:rgba(87,179,97,.2);color:var(--green-d)}
+.badge.aceptable{background:rgba(232,193,90,.2);color:var(--gold)}
+.badge.evitar{background:rgba(224,106,106,.2);color:var(--red)}
+.stepdots{display:flex;gap:6px;margin-bottom:14px}
+.stepdots span{width:22px;height:5px;border-radius:3px;background:var(--line)}
+.stepdots span.done{background:var(--green)}
+.backlink{color:var(--ink2);font-size:13px;cursor:pointer;display:inline-block;margin-bottom:14px}
+.backlink:hover{color:var(--green-d)}
+.summaryrow{border-top:1px solid var(--line);padding:12px 0}
+.summaryrow:first-child{border-top:none}
+.summaryrow .client{font-size:12.5px;color:var(--ink2);margin-bottom:4px}
+.summaryrow .chosen{font-size:13.5px;font-weight:600}
+.summaryrow .fb{font-size:12.5px;color:var(--ink2);margin-top:4px}
+.outcome{border-radius:12px;padding:18px 20px;margin-bottom:16px;font-size:14.5px;font-weight:600}
+.outcome.win{background:rgba(87,179,97,.14);border:1px solid var(--green)}
+.outcome.lose{background:rgba(224,106,106,.12);border:1px solid var(--red)}
+.outcome .tag2{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.outcome.win .tag2{color:var(--green-d)}
+.outcome.lose .tag2{color:var(--red)}
+footer{border-top:1px solid var(--line);padding:20px 0;color:var(--muted);font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Entrenamiento de Ventas — Neural Finance</h1>
+  <p>Quiz de conocimiento, reuniones de diagnóstico (terminan en envío de propuesta o no) y reuniones de cierre post-propuesta (terminan en contrato firmado o no).</p>
+  <nav class="tabs">
+    <button id="tabQuizBtn" class="active" onclick="showTab('quiz')">Quiz (12 preguntas)</button>
+    <button id="tabDiagBtn" onclick="showTab('diag')">Reuniones de diagnóstico (12)</button>
+    <button id="tabCloseBtn" onclick="showTab('close')">Reuniones de cierre (12)</button>
+  </nav>
+</div></header>
+
+<main class="wrap">
+
+  <section id="quizTab">
+    <div class="scoreboard">
+      <span class="pill">Respondidas: <b id="quizAnswered">0</b>/12</span>
+      <span class="pill">Correctas: <b id="quizCorrect">0</b></span>
+    </div>
+    <div id="quizList"></div>
+    <button class="bigbtn" onclick="revealAllQuiz()">Corregir todo</button>
+  </section>
+
+  <section id="diagTab" class="hidden">
+    <p style="color:var(--ink2);font-size:13.5px;margin-bottom:16px">Cada reunión termina cuando el cliente acepta recibir la propuesta con precio y plazo, o cuando la reunión se enfría o se corta. El resultado depende de tus respuestas.</p>
+    <div class="scoreboard">
+      <span class="pill">Intentadas: <b id="diagDone">0</b>/12</span>
+      <span class="pill" style="color:var(--green-d)">Propuesta aceptada: <b id="diagWin">0</b></span>
+      <span class="pill" style="color:var(--red)">No avanzó: <b id="diagLose">0</b></span>
+    </div>
+    <div id="diagListView" class="grid"></div>
+    <div id="diagRunnerView" class="hidden"></div>
+  </section>
+
+  <section id="closeTab" class="hidden">
+    <p style="color:var(--ink2);font-size:13.5px;margin-bottom:16px">Mismos clientes, ya con la propuesta enviada. Algunos ya aceptaron por correo y sólo falta confirmar detalles; otros piden una reunión técnica antes de firmar.</p>
+    <div class="scoreboard">
+      <span class="pill">Intentadas: <b id="closeDone">0</b>/12</span>
+      <span class="pill" style="color:var(--green-d)">Contrato firmado: <b id="closeWin">0</b></span>
+      <span class="pill" style="color:var(--red)">No se cerró: <b id="closeLose">0</b></span>
+    </div>
+    <div id="closeListView" class="grid"></div>
+    <div id="closeRunnerView" class="hidden"></div>
+  </section>
+
+</main>
+<footer>Herramienta interna de práctica — basada en el motor operativo de Neural Finance.</footer>
+
+<script>
+// ======================= DATA: QUIZ =======================
+const quiz = [
+  {q:`En la Etapa 0 (Prospección), ¿cuál de estos NO es un criterio de calificación que usa el vendedor?`,
+   options:[`Ventas anuales`,`Señales de estrés (mora, renegociación bancaria, rotación de CFO)`,`Quién toma la decisión de compra`,`El rubro específico de la empresa`],
+   correct:3, explain:`Etapa 0 califica por ventas, señales de estrés y quién decide; el rubro se explora recién en la Etapa 1 como contexto.`},
+  {q:`¿Cuál es el objetivo real de la primera reunión (Etapa 1)?`,
+   options:[`Cerrar la venta en el acto`,`Presentar el precio y plazo antes de escuchar al cliente`,`Diagnóstico exploratorio para entender el dolor real y confirmar que Neural Finance puede resolverlo`,`Pedir los tres documentos base de inmediato`],
+   correct:2, explain:`No es venta agresiva: es diagnóstico exploratorio. La propuesta con precio y plazo sale después de esa conversación.`},
+  {q:`¿Cuáles son los tres documentos base que se piden al partir (Etapa 2)?`,
+   options:[`EEFF, cartolas bancarias y carpeta SII`,`Contratos, pólizas de seguro y actas de directorio`,`Tabla de amortización, F29 y organigrama`,`Presupuesto anual, CV del gerente y plan estratégico`],
+   correct:0, explain:`Son deliberadamente mínimos: cruzados entre sí, ya destapan la enorme mayoría de las desviaciones.`},
+  {q:`Un cliente pregunta por qué no le piden "todos los documentos posibles" desde el inicio. ¿Cuál es la respuesta correcta?`,
+   options:[`Porque Neural Finance no necesita más información nunca`,`Porque se pide sólo lo mínimo que entrega la mayor parte de la visión; lo demás se pide después, dirigido`,`Porque el cliente debe entregar todo antes de la primera reunión`,`Porque los documentos adicionales los pide directamente el banco`],
+   correct:1, explain:`Nunca se pide un archivo genérico que probablemente no se tiene a mano; lo adicional se pide dirigido, cuando la Fase C lo señala.`},
+  {q:`¿Qué relación tiene Neural Sensitivity con Neural Core?`,
+   options:[`Son completamente independientes`,`Sensitivity puede reemplazar a Core si el cliente no tiene tiempo`,`Sensitivity exige como insumo obligatorio el ranking de nodos críticos que entrega Core`,`Core depende de los resultados de Sensitivity`],
+   correct:2, explain:`Sin un diagnóstico (Core) no hay nada que simular. Por eso también se venden como paquete combinado.`},
+  {q:`¿Neural Check requiere haber contratado antes Core o Sensitivity?`,
+   options:[`Sí, siempre es obligatorio`,`No, es contratable de forma independiente, aunque se potencia si el cliente ya tiene nodos identificados`,`Sólo si el cliente tiene más de $500M en ventas`,`Sólo para empresas ya auditadas`],
+   correct:1, explain:`Check es independiente, pero parte con foco si ya existen nodos críticos identificados por Core.`},
+  {q:`En la Fase B de Neural Core (Six Sigma), ¿qué error se prioriza evitar por sobre todo?`,
+   options:[`El falso positivo`,`El falso negativo (no detectar un problema que sí existe)`,`Ambos se tratan igual`,`Ninguno, el algoritmo nunca se equivoca`],
+   correct:1, explain:`El motor prefiere revisar de más antes que dejar pasar un problema real.`},
+  {q:`¿Cuál de estas afirmaciones sobre los límites del servicio es correcta?`,
+   options:[`Redacta contratos y presenta declaraciones ante el SII si el cliente lo pide`,`Diagnostica y cuantifica en pesos, pero deriva a abogado, contador certificado o corredor cuando corresponde`,`Gestiona directamente los créditos bancarios del cliente`,`Certifica los estados financieros como auditor externo`],
+   correct:1, explain:`Cuando el diagnóstico revela algo que requiere un profesional certificado, el informe lo señala y deriva — nunca lo ejecuta.`},
+  {q:`Un cliente pregunta: "¿me garantizan que van a mejorar mi EBITDA en X%?" ¿Qué respuesta refleja mejor el método?`,
+   options:[`"Sí, lo garantizamos por contrato."`,`"No existe un único óptimo garantizado: Sensitivity modela varias configuraciones, cada una con su nivel de riesgo y retorno."`,`"Depende de la suerte del mercado."`,`"Le aseguro un 20% porque es lo que prometemos a todos."`],
+   correct:1, explain:`Es el concepto de frontera eficiente: varias configuraciones candidatas, ninguna es "la" óptima garantizada.`},
+  {q:`¿Qué distingue a CUSUM y EWMA de una simple carta SPC en Neural Check?`,
+   options:[`Detectan cambios lentos o graduales que un solo mes fuera de rango no mostraría`,`Sólo funcionan con más de 5 años de cliente`,`Reemplazan por completo a Western Electric`,`Sólo se usan para variables tributarias`],
+   correct:0, explain:`SPC agarra el salto brusco; CUSUM acumula desviaciones chicas; EWMA pondera lo reciente. Ninguno reemplaza a los otros.`},
+  {q:`¿Cuál es el entregable central de Neural Check?`,
+   options:[`El reporte mensual de una página`,`El panel de control vivo, que el reporte mensual complementa`,`Un correo automático sin revisión humana`,`Una factura mensual detallada`],
+   correct:1, explain:`El panel vivo es el entregable central; el reporte lo complementa.`},
+  {q:`¿Cuándo se firma el contrato con el cliente, según la Etapa 6?`,
+   options:[`Después de la entrega del informe final`,`Antes de la Etapa 2 (solicitud de documentos)`,`Sólo si el cliente pide una boleta`,`No es necesario un contrato formal`],
+   correct:1, explain:`La Etapa 6 corre en paralelo desde el inicio: el contrato se firma antes de recibir cualquier documento.`},
+];
+
+// ======================= DATA: REUNIONES DE DIAGNÓSTICO =======================
+const casesDiag = [
+{title:`1 · Mario`, persona:`Dueño de una empresa de logística (15 camiones). Reunión presencial breve.`,
+ steps:[
+  {client:`"Antes de partir, cuénteme rápido qué hacen, porque mi tiempo es limitado."`, options:[
+   {text:`Encontramos por qué está pasando algo raro en sus números y cuánto le cuesta en pesos no saberlo — en días, no meses.`, grade:`ideal`, feedback:`Correcto: resume el valor y dirige a la escucha.`},
+   {text:`Somos una consultora financiera con IA que hace diagnósticos rápidos.`, grade:`aceptable`, feedback:`Aceptable pero genérico, no conecta con "cuánto cuesta en pesos".`},
+   {text:`Tenemos el mejor software de análisis financiero del mercado.`, grade:`evitar`, feedback:`Evitar: suena a venta de producto, no a diagnóstico de su problema.`}]},
+  {client:`"La verdad, el banco nos pidió reestructurar un crédito y no tengo claro por qué se apretó tanto la caja."`, options:[
+   {text:`Con esa reestructuración en curso, ¿el camión nuevo que tenían pensado comprar quedó en pausa hasta ver esto más claro?`, grade:`ideal`, feedback:`Correcto: conecta la falta de claridad con una decisión concreta del negocio, en vez de preguntar en abstracto.`},
+   {text:`Entiendo, eso pasa seguido en logística por el combustible.`, grade:`aceptable`, feedback:`Aceptable, empatiza pero no profundiza.`},
+   {text:`Seguramente es porque están mal administrados.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: juzga al cliente en la cara y rompe la confianza de inmediato.`}]},
+  {client:`"Ok, me hizo sentido. ¿Y ahora qué sigue?"`, options:[
+   {text:`Con esto que me contó, le armo una propuesta esta semana con el precio y el plazo, y usted la revisa con el equipo cuando le acomode.`, grade:`ideal`, feedback:`Correcto: cierra con una propuesta concreta basada en lo conversado, sin presionar por una respuesta inmediata.`},
+   {text:`Le mando información general de nuestros servicios para que revise.`, grade:`aceptable`, feedback:`Aceptable pero débil, no ofrece la propuesta concreta.`},
+   {text:`Necesito que me confirme hoy mismo si quiere contratar.`, grade:`evitar`, feedback:`Evitar: presiona un cierre inmediato que no corresponde a esta etapa.`}]},
+ ],
+ outcomes:{success:`Mario responde: "Envíenmela, la reviso con el equipo." — Acepta recibir la propuesta.`,
+  failSoft:`Mario responde: "Mejor lo pensamos y le avisamos." — Se enfría, sin compromiso.`,
+  failCritical:`Mario se incomoda: "Creo que esto no es para nosotros, gracias por su tiempo." — Corta la reunión.`}},
+
+{title:`2 · Fernanda`, persona:`Gerenta de finanzas, retail mediano. El dueño es quien decide.`,
+ steps:[
+  {client:`"Antes de empezar: la decisión final la toma el dueño, yo sólo evalúo opciones."`, options:[
+   {text:`Perfecto, entonces me interesa que él participe cuando presentemos la propuesta final, para no repetir esta conversación.`, grade:`ideal`, feedback:`Correcto: asegura al decisor real sin desplazar a Fernanda.`},
+   {text:`No hay problema, avancemos igual y después vemos cómo incluirlo.`, grade:`aceptable`, feedback:`Aceptable, pero deja sin resolver cuándo entra el dueño.`},
+   {text:`Entonces prefiero reunirme directamente con él.`, grade:`evitar`, feedback:`Evitar: desestima a la interlocutora actual sin necesidad.`}]},
+  {client:`"Nuestro problema es que el margen viene cayendo hace meses y nadie sabe bien por qué."`, options:[
+   {text:`¿Y esa caída de margen les ha hecho postergar alguna decisión, como renegociar con algún proveedor grande?`, grade:`ideal`, feedback:`Correcto: liga la falta de claridad a una decisión concreta y plausible para un retail, no una pregunta genérica.`},
+   {text:`Eso es común en retail con la inflación de insumos.`, grade:`aceptable`, feedback:`Aceptable, generaliza en vez de profundizar.`},
+   {text:`Seguro es un tema de precios mal calculados.`, grade:`evitar`, feedback:`Evitar: se adelanta a diagnosticar sin evidencia.`}]},
+  {client:`"Tiene sentido. ¿Cómo seguimos?"`, options:[
+   {text:`Preparo la propuesta con precio y plazo, y se la envío a usted y al dueño juntos esta semana.`, grade:`ideal`, feedback:`Correcto: incluye al decisor real en el siguiente paso.`},
+   {text:`Le envío la propuesta a usted no más.`, grade:`aceptable`, feedback:`Aceptable, funcional, pero no involucra al decisor desde ya.`},
+   {text:`Necesito que el dueño firme algo antes de seguir avanzando.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: presiona una formalidad antes de tiempo y genera fricción.`}]},
+ ],
+ outcomes:{success:`Fernanda dice: "Perfecto, se la reenvío al dueño altiro." — Acepta recibir la propuesta.`,
+  failSoft:`Fernanda queda dudosa: "Lo consulto internamente y le aviso." — Sin compromiso claro.`,
+  failCritical:`Fernanda se tensa: "Creo que se está adelantando mucho, mejor lo dejamos aquí." — Corta la reunión.`}},
+
+{title:`3 · Roberto`, persona:`Gerente general, construcción. Pidió precio por correo antes de reunirse.`,
+ steps:[
+  {client:`"Ya le dije que quería el precio antes, pero bueno, aquí estamos. ¿Vamos rápido?"`, options:[
+   {text:`Vamos directo entonces: cuénteme en una frase qué es lo que más le está complicando hoy en la empresa.`, grade:`ideal`, feedback:`Correcto: respeta el pedido de ir al grano, con una pregunta abierta y natural en vez de un libreto.`},
+   {text:`Primero le explico brevemente qué hacemos y después vemos precio.`, grade:`aceptable`, feedback:`Aceptable, pero no es lo más eficiente si pidió ir al grano.`},
+   {text:`Antes de nada, necesito que me cuente todo el historial financiero de la empresa.`, grade:`evitar`, feedback:`Evitar: pide demasiado de entrada, sin ir al grano.`}]},
+  {client:`"Tenemos atrasos con dos proveedores grandes y no sé si es caja o gestión."`, options:[
+   {text:`¿Qué le está exigiendo el banco o el directorio en torno a esto?`, grade:`ideal`, feedback:`Correcto: segunda pregunta guía real de la Etapa 1.`},
+   {text:`Eso se resuelve normalmente negociando plazos con los proveedores.`, grade:`aceptable`, feedback:`Aceptable, pero se adelanta a una solución sin diagnosticar.`},
+   {text:`Eso pasa por no llevar bien la contabilidad.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: juicio apresurado sin evidencia, ofende al cliente.`}]},
+  {client:`"Bien, ¿y el precio?"`, options:[
+   {text:`Se lo dejamos por escrito hoy mismo, con precio y plazo, basado en esto que conversamos.`, grade:`ideal`, feedback:`Correcto: entrega lo que pidió desde el principio, agilidad.`},
+   {text:`Le puedo dar un rango de precio ahora, y el detalle se lo mando después.`, grade:`aceptable`, feedback:`Aceptable, da algo concreto pero no cierra con la propuesta formal.`},
+   {text:`El precio se define después de varias reuniones más.`, grade:`evitar`, feedback:`Evitar: contradice justo lo que pidió desde el inicio.`}]},
+ ],
+ outcomes:{success:`Roberto dice: "Ya, mándemelo hoy entonces." — Acepta recibir la propuesta.`,
+  failSoft:`Roberto responde: "Mándeme algo, pero no prometo nada." — Aceptación tibia.`,
+  failCritical:`Roberto corta: "Para eso mejor sigo con mi contador de siempre." — Se cae la reunión.`}},
+
+{title:`4 · Paula`, persona:`CFO, empresa de alimentos. Compara con su auditoría actual.`,
+ steps:[
+  {client:`"Ya tengo auditores. ¿En qué son distintos ustedes?"`, options:[
+   {text:`La auditoría certifica que sus estados están correctos; nosotros buscamos por qué algo anda mal y cuánto vale corregirlo en pesos.`, grade:`ideal`, feedback:`Correcto: distingue el valor sin desprestigiar al auditor.`},
+   {text:`Somos más rápidos y usamos IA.`, grade:`aceptable`, feedback:`Aceptable, incompleto.`},
+   {text:`Los auditores tradicionales están obsoletos.`, grade:`evitar`, feedback:`Evitar: desprestigia a la competencia sin necesidad.`}]},
+  {client:`"¿Y ustedes también certifican los estados financieros?"`, options:[
+   {text:`No, no certificamos ni ejecutamos trámites contables: diagnosticamos, y si algo requiere un profesional certificado, lo derivamos.`, grade:`ideal`, feedback:`Correcto: aclara el límite real del servicio.`},
+   {text:`No exactamente, pero es parecido.`, grade:`aceptable`, feedback:`Aceptable, vago.`},
+   {text:`En la práctica hacemos lo mismo que un auditor.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: afirmación falsa, riesgo reputacional para Paula si la repite hacia arriba.`}]},
+  {client:`"Entendido. ¿Cómo seguimos?"`, options:[
+   {text:`Le mando esta semana el alcance exacto por escrito, junto con precio y plazo, para que quede claro dónde termina el diagnóstico y dónde empieza el trabajo de su auditor.`, grade:`ideal`, feedback:`Correcto: cierra reforzando justo la distinción que le importaba a Paula, no una fórmula genérica.`},
+   {text:`Le mando unos casos de éxito primero.`, grade:`aceptable`, feedback:`Aceptable, pero no avanza concretamente.`},
+   {text:`Mejor lo conversamos con su auditor primero, antes de proponerle algo.`, grade:`evitar`, feedback:`Evitar: delega la decisión a un tercero sin necesidad.`}]},
+ ],
+ outcomes:{success:`Paula dice: "De acuerdo, envíela y la reviso." — Acepta recibir la propuesta.`,
+  failSoft:`Paula responde: "Necesito pensarlo con calma." — Queda abierta sin compromiso.`,
+  failCritical:`Paula se pone seria: "Prefiero no seguir, esto me genera dudas." — Se cae la reunión.`}},
+
+{title:`5 · Diego`, persona:`Dueño pyme de manufactura. El precio le preocupa.`,
+ steps:[
+  {client:`"Antes de entrar en detalles, le adelanto que el precio me preocupa."`, options:[
+   {text:`Entiendo, hablemos primero de lo que está pasando en su negocio, y el precio lo vemos en contexto de lo que eso le cuesta hoy.`, grade:`ideal`, feedback:`Correcto: no discute precio en el vacío, lo ancla al dolor.`},
+   {text:`No se preocupe, al final vale la pena.`, grade:`aceptable`, feedback:`Aceptable, tranquiliza sin sustento.`},
+   {text:`El precio no es negociable, así que mejor lo sabe de entrada.`, grade:`evitar`, feedback:`Evitar: cierra la conversación de valor antes de empezar.`}]},
+  {client:`"Mi margen viene cayendo y no sé si es por costos laborales o precios mal puestos."`, options:[
+   {text:`¿Y esa caída de margen ya los hizo postergar algo, como subir precios o renegociar con el personal?`, grade:`ideal`, feedback:`Correcto: liga la incertidumbre a una decisión concreta y realista para una manufactura, sin sonar a libreto.`},
+   {text:`Ese tipo de casos los vemos harto en manufactura.`, grade:`aceptable`, feedback:`Aceptable, generaliza sin profundizar.`},
+   {text:`Seguramente es un tema de mano de obra cara.`, grade:`evitar`, feedback:`Evitar: diagnostica sin evidencia todavía.`}]},
+  {client:`"Ya, me interesa. ¿Y el precio, al final?"`, options:[
+   {text:`Si el presupuesto completo es alto para partir, hay diagnósticos focalizados más acotados que suben a completo después, descontando lo pagado.`, grade:`ideal`, feedback:`Correcto: ofrece la puerta de entrada modular real.`},
+   {text:`Le puedo hacer un descuento especial si firma hoy.`, grade:`aceptable`, feedback:`Aceptable como concesión, pero no es parte del método descrito.`},
+   {text:`Le bajo el precio a la mitad, entre nosotros no más.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: rebaja improvisada que daña la credibilidad del precio y del servicio.`}]},
+ ],
+ outcomes:{success:`Diego dice: "Ya, mándeme la propuesta del focalizado entonces." — Acepta recibir la propuesta.`,
+  failSoft:`Diego responde: "Lo converso con mi socio y le cuento." — Queda pendiente.`,
+  failCritical:`Diego desconfía: "Si baja tanto el precio así no más, algo no cuadra. Mejor no." — Se cae la reunión.`}},
+
+{title:`6 · Andrea`, persona:`Gerenta administrativa, empresa familiar. Le preocupa la privacidad.`,
+ steps:[
+  {client:`"Me preocupa compartir información tan sensible como cartolas bancarias."`, options:[
+   {text:`Totalmente válido. El contrato se firma antes de pedir cualquier documento, y cubre confidencialidad y propiedad de la información.`, grade:`ideal`, feedback:`Correcto: responde con el mecanismo real.`},
+   {text:`No se preocupe, nunca hemos tenido problemas.`, grade:`aceptable`, feedback:`Aceptable, sin garantía concreta.`},
+   {text:`Sin esa información no podemos hacer nada, así que no hay opción.`, grade:`evitar`, feedback:`Evitar: presiona sin resolver la preocupación.`}]},
+  {client:`"¿Y qué pasa con esos documentos después del diagnóstico?"`, options:[
+   {text:`Eso se define por contrato: cuánto tiempo se conservan, según la Ley 21.719 de protección de datos.`, grade:`ideal`, feedback:`Correcto: cita el mecanismo real.`},
+   {text:`Los guardamos de forma segura en nuestros sistemas.`, grade:`aceptable`, feedback:`Aceptable, genérico.`},
+   {text:`Eso no es algo que podamos controlar del todo.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: admite falta de control sobre datos sensibles, rompe la confianza.`}]},
+  {client:`"Bueno, entendido. ¿Cómo seguimos?"`, options:[
+   {text:`Le enviamos el contrato y la propuesta con precio y plazo, así queda formalizado antes de pedirle cualquier documento.`, grade:`ideal`, feedback:`Correcto: cierre alineado al método (contrato antes de Etapa 2).`},
+   {text:`Le mando la propuesta y después vemos el contrato.`, grade:`aceptable`, feedback:`Aceptable, pero invierte el orden ideal.`},
+   {text:`Necesito que me envíe las cartolas para poder cotizar.`, grade:`evitar`, feedback:`Evitar: pide documentos sensibles antes de tiempo, sin contrato firmado.`}]},
+ ],
+ outcomes:{success:`Andrea dice: "Ya, mándeme todo junto entonces." — Acepta recibir la propuesta.`,
+  failSoft:`Andrea responde: "Necesito consultarlo con el resto de la familia." — Queda pendiente.`,
+  failCritical:`Andrea se retracta: "Esto no me da confianza, prefiero no seguir." — Se cae la reunión.`}},
+
+{title:`7 · Cristóbal`, persona:`Dueño de una empresa de transporte, nervioso por posibles irregularidades.`,
+ steps:[
+  {client:`"¿Qué pasa si encuentran algo... irregular en mis números?"`, options:[
+   {text:`Lo señalamos y cuantificamos como cualquier hallazgo, pero no lo ejecutamos ni lo denunciamos; si requiere abogado o contador, lo derivamos.`, grade:`ideal`, feedback:`Correcto: explica el límite real sin alarmar.`},
+   {text:`Eso lo vemos caso a caso.`, grade:`aceptable`, feedback:`Aceptable, deja la duda abierta.`},
+   {text:`Estamos obligados a informarlo a las autoridades.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: es falso y genera pánico justificado, terminando la conversación.`}]},
+  {client:`"Ya, menos mal. Mi problema es que no entiendo por qué el flujo de caja no cuadra con las ventas."`, options:[
+   {text:`¿Eso los tiene postergando alguna decisión, como pedir una línea de crédito adicional o revisar precios de fletes?`, grade:`ideal`, feedback:`Correcto: propone ejemplos concretos y plausibles para una empresa de transporte, en vez de preguntar en abstracto.`},
+   {text:`Eso pasa seguido cuando hay mucho efectivo circulando.`, grade:`aceptable`, feedback:`Aceptable, generaliza sin profundizar.`},
+   {text:`Puede ser que alguien interno esté haciendo algo indebido.`, grade:`evitar`, feedback:`Evitar: especula de forma alarmante sin evidencia.`}]},
+  {client:`"Ok, tiene sentido. ¿Seguimos entonces?"`, options:[
+   {text:`Le dejo la propuesta armada esta semana, con precio y plazo, para que la revise con la tranquilidad de lo que ya conversamos.`, grade:`ideal`, feedback:`Correcto: cierra sin presión, reforzando la tranquilidad que Cristóbal necesitaba después de resolver sus dudas.`},
+   {text:`Le mando información general primero.`, grade:`aceptable`, feedback:`Aceptable, menos directo.`},
+   {text:`Necesito que me diga ahora si tiene algo que ocultar.`, grade:`evitar`, feedback:`Evitar: pregunta invasiva y acusatoria.`}]},
+ ],
+ outcomes:{success:`Cristóbal dice: "Ya, mándeme la propuesta." — Acepta recibir la propuesta.`,
+  failSoft:`Cristóbal duda: "Déjeme pensarlo unos días." — Queda pendiente.`,
+  failCritical:`Cristóbal se levanta: "Esto se siente como un interrogatorio, mejor lo dejamos aquí." — Se cae la reunión.`}},
+
+{title:`8 · Valentina`, persona:`Gerenta financiera, empresa de servicios. Quiere sólo Neural Check.`,
+ steps:[
+  {client:`"Yo en realidad sólo quiero el monitoreo mensual, nada más grande por ahora."`, options:[
+   {text:`Perfecto, Neural Check es contratable de forma independiente. Cuénteme primero qué le preocupa monitorear.`, grade:`ideal`, feedback:`Correcto: respeta la solicitud y sigue con la escucha real.`},
+   {text:`Ok, pero le recomiendo el paquete completo, es mejor.`, grade:`aceptable`, feedback:`Aceptable como recomendación, pero ignora lo que pidió.`},
+   {text:`Sin el diagnóstico completo antes, el monitoreo no tiene sentido.`, grade:`evitar`, feedback:`Evitar: información incorrecta, Check es independiente.`}]},
+  {client:`"Me preocupa no darme cuenta a tiempo si algo se empieza a descontrolar en la caja."`, options:[
+   {text:`¿Hoy tiene alguna señal de eso, como atrasos con el banco o proveedores?`, grade:`ideal`, feedback:`Correcto: profundiza el dolor real antes de proponer.`},
+   {text:`Eso es justo lo que hace Check, tranquila.`, grade:`aceptable`, feedback:`Aceptable, pero se adelanta a vender sin profundizar.`},
+   {text:`Eso normalmente ya es demasiado tarde para monitorear.`, grade:`evitar`, feedback:`Evitar: genera alarma innecesaria.`}]},
+  {client:`"Bien, ¿cómo seguimos?"`, options:[
+   {text:`Le armamos la propuesta de Check con precio y plazo esta semana, enfocada en lo que me contó.`, grade:`ideal`, feedback:`Correcto: cierre alineado a lo pedido.`},
+   {text:`Le mando la propuesta del paquete completo para que compare.`, grade:`aceptable`, feedback:`Aceptable, pero insiste en algo que no pidió.`},
+   {text:`Le armo la propuesta, pero le voy a insistir en el paquete completo hasta que acepte.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: presión excesiva sobre algo ya descartado explícitamente.`}]},
+ ],
+ outcomes:{success:`Valentina dice: "Perfecto, envíela así como la conversamos." — Acepta recibir la propuesta.`,
+  failSoft:`Valentina responde: "Lo pienso y le escribo." — Queda pendiente.`,
+  failCritical:`Valentina se incomoda: "Le dije que no quería el paquete completo, mejor lo dejamos aquí." — Se cae la reunión.`}},
+
+{title:`9 · Jorge`, persona:`Gerente general, retail. Escéptico de la IA.`,
+ steps:[
+  {client:`"De entrada le digo que no confío mucho en que una IA revise mis finanzas."`, options:[
+   {text:`Entendible. La IA hace el trabajo pesado de cruzar datos, pero cada hallazgo lo confirma un analista senior antes de llegar a usted.`, grade:`ideal`, feedback:`Correcto: explica el rol combinado real.`},
+   {text:`La IA de hoy es muy confiable, no se preocupe.`, grade:`aceptable`, feedback:`Aceptable, pero no explica el mecanismo real de revisión humana.`},
+   {text:`Entonces este servicio no es para usted.`, grade:`evitar`, feedback:`Evitar: cierra la puerta sin intentar explicar el método.`}]},
+  {client:`"¿Y qué pasa si el sistema se equivoca?"`, options:[
+   {text:`El motor prefiere revisar de más antes que dejar pasar algo real; cada hallazgo se valida contra al menos dos fuentes antes de confirmarse.`, grade:`ideal`, feedback:`Correcto: describe la validación real de Six Sigma.`},
+   {text:`Somos muy cuidadosos, no ha pasado nunca.`, grade:`aceptable`, feedback:`Aceptable, sin mecanismo concreto.`},
+   {text:`La IA prácticamente nunca se equivoca, es casi perfecta.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: promesa poco creíble que un escéptico detecta de inmediato.`}]},
+  {client:`"Ya, tiene más sentido de lo que pensé. ¿Y ahora?"`, options:[
+   {text:`Le enviamos la propuesta, y el informe final se entrega siempre en una sesión con el analista, nunca sólo por correo.`, grade:`ideal`, feedback:`Correcto: refuerza la revisión humana en el cierre.`},
+   {text:`Le mando la propuesta no más.`, grade:`aceptable`, feedback:`Aceptable, funcional pero pierde la oportunidad de reforzar confianza.`},
+   {text:`Le mando la propuesta, pero el informe se entrega solo por correo.`, grade:`evitar`, feedback:`Evitar: contradice el método y reabre la desconfianza.`}]},
+ ],
+ outcomes:{success:`Jorge dice: "Ya, envíela, quiero ver esto." — Acepta recibir la propuesta.`,
+  failSoft:`Jorge responde: "Necesito masticarlo un poco más." — Queda pendiente.`,
+  failCritical:`Jorge desconfía: "Esto me suena a puro cuento, mejor no." — Se cae la reunión.`}},
+
+{title:`10 · Camila`, persona:`CFO, empresa de tecnología. Urgencia por el directorio.`,
+ steps:[
+  {client:`"Le aviso de entrada: necesito esto resuelto para el directorio del viernes."`, options:[
+   {text:`Entiendo la urgencia. El diagnóstico completo toma 2-3 semanas por la validación rigurosa; veamos si un enfoque más acotado calza con el viernes.`, grade:`ideal`, feedback:`Correcto: honesto con plazos reales, ofrece alternativa.`},
+   {text:`Vamos a hacer lo posible por tenerlo antes.`, grade:`aceptable`, feedback:`Aceptable, pero vago.`},
+   {text:`Sin problema, se lo tenemos listo para el viernes.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: promesa imposible que después no se puede cumplir.`}]},
+  {client:`"¿Por qué se demora tanto si usan IA?"`, options:[
+   {text:`La IA acelera la búsqueda, pero cada hallazgo se valida con rigor antes de confirmarse — esa validación da la confiabilidad.`, grade:`ideal`, feedback:`Correcto: explica bien la razón real del plazo.`},
+   {text:`Son varios pasos internos que toman tiempo.`, grade:`aceptable`, feedback:`Aceptable, vago.`},
+   {text:`La verdad podríamos ir más rápido, pero así cobramos más.`, grade:`evitar`, feedback:`Evitar: sugiere mala fe.`}]},
+  {client:`"Ok. ¿Qué le puedo mostrar al directorio el viernes entonces?"`, options:[
+   {text:`Le dejo la propuesta armada esta semana, junto con un resumen de alcance preliminar para el directorio, dejando claro que el informe validado llega en 2-3 semanas.`, grade:`ideal`, feedback:`Correcto: da valor real para el viernes sin prometer de más.`},
+   {text:`Le mando sólo la propuesta, nada más por ahora.`, grade:`aceptable`, feedback:`Aceptable, honesto pero menos útil para el viernes.`},
+   {text:`Le armo unos hallazgos preliminares como si ya estuvieran confirmados.`, grade:`evitar`, feedback:`Evitar: contradice el método, arriesga la credibilidad.`}]},
+ ],
+ outcomes:{success:`Camila dice: "Ya, mándeme todo eso hoy." — Acepta recibir la propuesta.`,
+  failSoft:`Camila responde: "Necesito algo más concreto, lo pienso." — Queda pendiente.`,
+  failCritical:`Camila se molesta: "No puedo prometerle nada así al directorio, mejor no seguimos." — Se cae la reunión.`}},
+
+{title:`11 · Ignacio`, persona:`Dueño de una empresa de eventos. Está cotizando con otras consultoras.`,
+ steps:[
+  {client:`"Le cuento que estamos cotizando con dos consultoras más antes de decidir."`, options:[
+   {text:`Me parece bien que compare. ¿Qué es lo más importante para usted al elegir entre las opciones?`, grade:`ideal`, feedback:`Correcto: no reacciona a la defensiva, indaga el criterio real.`},
+   {text:`Entiendo, nosotros somos los mejores en esto de todas formas.`, grade:`aceptable`, feedback:`Aceptable en tono, pero no aporta nada concreto.`},
+   {text:`¿Con quién más está cotizando? Necesito saber para poder competir.`, grade:`evitar`, feedback:`Evitar: suena a competir por precio en vez de por valor.`}]},
+  {client:`"Lo que más me importa es entender por qué mi negocio tiene meses muy buenos y otros pésimos, sin patrón claro."`, options:[
+   {text:`¿Esa variación entre meses buenos y malos los tiene postergando decisiones de contratación o de inversión en nuevos eventos?`, grade:`ideal`, feedback:`Correcto: aterriza la pregunta en decisiones reales de un negocio de eventos, en vez de repetir una fórmula.`},
+   {text:`Eso es típico de negocios estacionales.`, grade:`aceptable`, feedback:`Aceptable, generaliza sin profundizar.`},
+   {text:`Eso seguramente lo puede ver cualquier consultora.`, grade:`evitar`, feedback:`Evitar: resta valor al propio servicio innecesariamente.`}]},
+  {client:`"Bien. ¿Cómo comparo su propuesta con las otras?"`, options:[
+   {text:`Le enviamos la propuesta con precio, plazo y alcance detallado, para que compare en las mismas condiciones.`, grade:`ideal`, feedback:`Correcto: cierre transparente que facilita una comparación justa.`},
+   {text:`Le pido que decida rápido porque nuestras condiciones pueden cambiar.`, grade:`aceptable`, feedback:`Aceptable como urgencia comercial, pero puede sentirse manipulador acá.`},
+   {text:`Si me dice cuánto le cotizaron los otros, igualamos el precio.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: transforma la conversación en guerra de precios, daña la credibilidad.`}]},
+ ],
+ outcomes:{success:`Ignacio dice: "Ya, mándemela, la reviso junto a las otras." — Acepta recibir la propuesta.`,
+  failSoft:`Ignacio responde: "Reviso todas juntas y le aviso." — Sin ventaja clara.`,
+  failCritical:`Ignacio desconfía: "Si así no más igualan precio, no sé qué tan serio es esto. Mejor no." — Se cae la reunión.`}},
+
+{title:`12 · Soledad`, persona:`Gerenta general, agroindustria. El directorio (5 personas) aprueba los gastos grandes.`,
+ steps:[
+  {client:`"Acá cualquier gasto grande lo tiene que aprobar el directorio completo, son cinco personas."`, options:[
+   {text:`Entiendo. ¿Quién dentro del directorio suele liderar este tipo de decisiones financieras?`, grade:`ideal`, feedback:`Correcto: busca identificar al decisor de facto.`},
+   {text:`No hay problema, les mando la propuesta a los cinco.`, grade:`aceptable`, feedback:`Aceptable como gestión, pero no identifica quién inclina la decisión.`},
+   {text:`Con cinco personas esto va a ser difícil de cerrar.`, grade:`evitar`, feedback:`Evitar: transmite pesimismo innecesario.`}]},
+  {client:`"El problema real es que no sabemos si la caída de rentabilidad es por precio de insumos o algo interno."`, options:[
+   {text:`¿Hay alguna decisión de inversión o de recorte de costos que el directorio esté esperando resolver esto para tomar?`, grade:`ideal`, feedback:`Correcto: conecta la falta de claridad con una decisión concreta pendiente del directorio.`},
+   {text:`Eso pasa mucho en el agro por la volatilidad de precios internacionales.`, grade:`aceptable`, feedback:`Aceptable, generaliza sin profundizar en el caso puntual.`},
+   {text:`Seguramente es un problema de gestión interna.`, grade:`evitar`, feedback:`Evitar: diagnostica sin evidencia y sin haber escuchado lo suficiente.`}]},
+  {client:`"Entendido. ¿Cómo armamos esto para que el directorio lo apruebe?"`, options:[
+   {text:`Le preparamos la propuesta con un resumen de una página pensado para que el directorio la revise y decida rápido.`, grade:`ideal`, feedback:`Correcto: adapta el cierre a la realidad de un comité de decisión.`},
+   {text:`Le mando la propuesta estándar, la misma que a cualquier cliente.`, grade:`aceptable`, feedback:`Aceptable, funcional pero no considera la dinámica del directorio.`},
+   {text:`Mejor que decida usted sola y después les informa al directorio.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: sugiere saltarse el gobierno corporativo del cliente.`}]},
+ ],
+ outcomes:{success:`Soledad dice: "Perfecto, así se las presento el lunes." — Acepta recibir la propuesta.`,
+  failSoft:`Soledad responde: "Lo llevo al directorio y les cuento." — Pendiente de decisión colectiva.`,
+  failCritical:`Soledad se pone firme: "Acá no nos saltamos el proceso, mejor lo dejamos aquí." — Se cae la reunión.`}},
+];
+
+// ======================= DATA: REUNIONES DE CIERRE =======================
+const casesClose = [
+{title:`3 · Roberto`, fast:true, persona:`Aceptó el precio por correo. Llamada breve de confirmación antes de firmar.`,
+ steps:[
+  {client:`"Ya, díganme qué necesitan de mi parte para partir."`, options:[
+   {text:`Primero firmamos el contrato corto de 1-2 páginas, y ahí definimos la fecha del 50% inicial y el 50% contra entrega.`, grade:`ideal`, feedback:`Correcto: sigue el orden real (contrato antes de documentos, pago 50/50).`},
+   {text:`Le mando los documentos a pedir directamente.`, grade:`aceptable`, feedback:`Aceptable, mueve rápido pero se salta el contrato.`},
+   {text:`Empecemos a trabajar de una vez, el contrato lo formalizamos después.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: contradice que el contrato se firma antes de la Etapa 2, deja expuestas a ambas partes.`}]},
+  {client:`"Perfecto. ¿Y la boleta o factura cómo la manejamos?"`, options:[
+   {text:`Se factura al pago de cada 50%, con Boleta o Factura Electrónica según cómo esté constituida Neural Finance.`, grade:`ideal`, feedback:`Correcto: refleja el mecanismo real de facturación.`},
+   {text:`Eso se lo confirmamos en el contrato.`, grade:`aceptable`, feedback:`Aceptable, correcto pero menos directo.`},
+   {text:`Eso lo vemos sobre la marcha, no es tan importante ahora.`, grade:`evitar`, feedback:`Evitar: resta seriedad a un tema que el cliente espera tener claro.`}]},
+ ],
+ outcomes:{success:`Roberto dice: "Ya, mándeme el contrato entonces, lo firmo esta semana." — Cierre exitoso.`,
+  failSoft:`Roberto responde: "Déjeme cuadrarlo con mi contador antes de firmar." — Cierre pendiente.`,
+  failCritical:`Roberto se frena: "Sin contrato firmado no empezamos nada, prefiero esperar." — Se cae el cierre.`}},
+
+{title:`2 · Fernanda`, fast:true, persona:`El dueño aprobó por correo. Llamada de coordinación con Fernanda.`,
+ steps:[
+  {client:`"El dueño ya aprobó. ¿Qué necesitan de nuestro lado para partir?"`, options:[
+   {text:`Enviamos el contrato para firma digital, y en paralelo compartimos la plataforma de carga para los tres documentos base.`, grade:`ideal`, feedback:`Correcto: sigue el orden correcto, contrato primero.`},
+   {text:`Les pedimos los documentos directamente por correo.`, grade:`aceptable`, feedback:`Aceptable, funcional pero menos ordenado.`},
+   {text:`Necesitamos que nos manden todo lo que tengan, mientras más mejor.`, grade:`evitar`, feedback:`Evitar: contradice pedir sólo lo mínimo necesario al partir.`}]},
+  {client:`"¿Cuánto se demoran una vez que tengan todo?"`, options:[
+   {text:`El diagnóstico completo toma entre 2 y 3 semanas desde que el checklist está 100% completo.`, grade:`ideal`, feedback:`Correcto: plazo real de Neural Core.`},
+   {text:`Un par de semanas, aproximadamente.`, grade:`aceptable`, feedback:`Aceptable, correcto pero menos preciso.`},
+   {text:`Depende, a veces se puede atrasar varios meses sin razón clara.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: transmite falta de control justo cuando el cliente espera certeza.`}]},
+ ],
+ outcomes:{success:`Fernanda dice: "Perfecto, les paso los datos de acceso hoy mismo." — Cierre exitoso.`,
+  failSoft:`Fernanda responde: "Coordino con el dueño el detalle y les escribo." — Cierre pendiente.`,
+  failCritical:`Fernanda se preocupa: "Así no podemos planificar nada, mejor esperamos." — Se cae el cierre.`}},
+
+{title:`8 · Valentina`, fast:true, persona:`Escribió que quiere partir con Check. Llamada de coordinación.`,
+ steps:[
+  {client:`"¿Cómo empieza exactamente el servicio una vez que firmemos?"`, options:[
+   {text:`Firmamos el contrato, conectamos las fuentes de datos de la Etapa 2, y desde el primer mes cerrado corre el primer re-screening.`, grade:`ideal`, feedback:`Correcto: describe el arranque real del ciclo de Check.`},
+   {text:`Empezamos a monitorear apenas nos manden datos.`, grade:`aceptable`, feedback:`Aceptable, simplifica pero omite el paso del contrato.`},
+   {text:`Empezamos a monitorear altiro, el contrato se ve después.`, grade:`evitar`, feedback:`Evitar: contradice el orden correcto (contrato antes de recibir datos).`}]},
+  {client:`"¿Y la renovación es automática o tenemos que estar renovando cada mes?"`, options:[
+   {text:`Se renueva automáticamente cada mes; si quieren terminar, basta avisar con 30 días de anticipación.`, grade:`ideal`, feedback:`Correcto: condición real de renovación y término.`},
+   {text:`Se renueva solo, no se preocupen de nada.`, grade:`aceptable`, feedback:`Aceptable, cierto pero incompleto (falta el aviso de 30 días).`},
+   {text:`Una vez que empiezan, quedan comprometidos por un año mínimo.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: inventa una condición contractual que no existe.`}]},
+ ],
+ outcomes:{success:`Valentina dice: "Perfecto, mándenme el contrato para firmar." — Cierre exitoso.`,
+  failSoft:`Valentina responde: "Reviso las condiciones con calma y les confirmo." — Cierre pendiente.`,
+  failCritical:`Valentina se molesta: "Eso no es lo que hablamos, necesito revisarlo con más detalle." — Se cae el cierre.`}},
+
+{title:`11 · Ignacio`, fast:true, persona:`Escribió que la propuesta lo convenció más que las otras.`,
+ steps:[
+  {client:`"¿Qué garantía tengo de que esto realmente va a explicar la variación entre mis meses buenos y malos?"`, options:[
+   {text:`No hay garantía de resultado numérico, pero sí de rigor: cada hallazgo se valida contra al menos dos fuentes antes de confirmarse.`, grade:`ideal`, feedback:`Correcto: honesto sobre lo que sí se garantiza, sin prometer un resultado.`},
+   {text:`Le puedo asegurar que vamos a encontrar la respuesta.`, grade:`aceptable`, feedback:`Aceptable en intención, pero promete un resultado que no se puede garantizar.`},
+   {text:`Le garantizo por escrito que va a mejorar su rentabilidad en un 20%.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: promete un número específico que el método no puede garantizar — riesgo contractual.`}]},
+  {client:`"Ok, entendido. ¿Y las condiciones de pago?"`, options:[
+   {text:`Normalmente 50% al inicio y 50% contra entrega del informe aprobado.`, grade:`ideal`, feedback:`Correcto: condición real de la Etapa 6.`},
+   {text:`Eso se conversa según cada caso.`, grade:`aceptable`, feedback:`Aceptable, correcto en espíritu pero menos concreto.`},
+   {text:`Tiene que pagar el 100% por adelantado.`, grade:`evitar`, feedback:`Evitar: no corresponde a la condición estándar, genera desconfianza sin necesidad.`}]},
+ ],
+ outcomes:{success:`Ignacio dice: "De acuerdo, mándenme el contrato entonces." — Cierre exitoso.`,
+  failSoft:`Ignacio responde: "Reviso una vez más y les confirmo la próxima semana." — Cierre pendiente.`,
+  failCritical:`Ignacio se retracta: "Con una garantía así no me da confianza, prefiero no seguir." — Se cae el cierre.`}},
+
+{title:`1 · Mario`, persona:`Recibió la propuesta y pidió una reunión para resolver dudas antes de firmar.`,
+ steps:[
+  {client:`"Leí la propuesta, pero no entiendo qué pasa si al final no encuentran nada grave."`, options:[
+   {text:`Igual entrega valor: confirma con evidencia que sus procesos están sanos, y eso también es información útil para el banco o el directorio.`, grade:`ideal`, feedback:`Correcto: responde con honestidad al escenario de "no hallazgos".`},
+   {text:`Eso casi nunca pasa, siempre encontramos algo.`, grade:`aceptable`, feedback:`Aceptable como intento de tranquilizar, pero suena a resultado predeterminado.`},
+   {text:`Le devolvemos la plata si no encontramos nada.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: inventa una garantía de devolución que no existe.`}]},
+  {client:`"¿Y el 50% inicial, cuándo se paga exactamente?"`, options:[
+   {text:`Al firmar el contrato, antes de empezar con la Etapa 2 de solicitud de documentos.`, grade:`ideal`, feedback:`Correcto: orden real de pago y proceso.`},
+   {text:`Se paga durante la primera semana de trabajo.`, grade:`aceptable`, feedback:`Aceptable, aproximado pero no preciso.`},
+   {text:`Eso se puede postergar si al cliente le complica el flujo de caja.`, grade:`evitar`, feedback:`Evitar: debilita la condición comercial estándar sin necesidad.`}]},
+  {client:`"Ya, tiene sentido. ¿Firmamos entonces?"`, options:[
+   {text:`Entonces no perdamos el impulso: le mando el contrato ahora mismo para firma digital.`, grade:`ideal`, feedback:`Correcto: cierre directo y concreto, sin dejar enfriar un cierre ya maduro.`},
+   {text:`Nos juntamos la próxima semana para firmar con calma.`, grade:`aceptable`, feedback:`Aceptable, pero retrasa innecesariamente un cierre ya maduro.`},
+   {text:`Firmamos cuando usted tenga tiempo, no hay apuro.`, grade:`evitar`, feedback:`Evitar: resta impulso a un cierre ya listo para concretarse.`}]},
+ ],
+ outcomes:{success:`Mario firma en el momento: "Ya, dele para adelante." — Cierre exitoso.`,
+  failSoft:`Mario responde: "Dejémoslo para la próxima semana." — Cierre postergado.`,
+  failCritical:`Mario se retracta: "Con esa condición de devolución rara, mejor lo pienso desde cero." — Se cae el cierre.`}},
+
+{title:`4 · Paula`, persona:`Revisó la propuesta con su equipo legal y pidió una reunión de cierre.`,
+ steps:[
+  {client:`"Mi equipo legal pregunta qué pasa con la confidencialidad de la información que les vamos a entregar."`, options:[
+   {text:`Queda cubierta en el contrato: confidencialidad y propiedad de la información son cláusulas estándar.`, grade:`ideal`, feedback:`Correcto: responde con el mecanismo contractual real.`},
+   {text:`No se preocupe, somos muy serios con eso.`, grade:`aceptable`, feedback:`Aceptable en tono, sin mecanismo concreto.`},
+   {text:`Podemos usar la información para mejorar nuestros propios modelos con otros clientes.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: sugiere un uso indebido de datos confidenciales, riesgo legal serio.`}]},
+  {client:`"¿Y los límites de responsabilidad de Neural Finance, dónde quedan?"`, options:[
+   {text:`Están en el contrato: alcance, plazo, precio, confidencialidad y límites de responsabilidad, todo en 1-2 páginas.`, grade:`ideal`, feedback:`Correcto: describe el contrato real de la Etapa 6.`},
+   {text:`Eso se conversa si llega a haber algún problema.`, grade:`aceptable`, feedback:`Aceptable, pero menos preciso que remitir al contrato.`},
+   {text:`Eso normalmente no se especifica por escrito.`, grade:`evitar`, feedback:`Evitar: un equipo legal espera precisamente que sí esté por escrito.`}]},
+  {client:`"Bien, con eso resuelto, ¿firmamos?"`, options:[
+   {text:`Con eso resuelto, le mando el contrato final para que su equipo legal lo revise y lo firme.`, grade:`ideal`, feedback:`Correcto: cierre ordenado, respeta el proceso legal del cliente.`},
+   {text:`Firmemos ahora y ajustamos detalles después.`, grade:`aceptable`, feedback:`Aceptable, pero incómodo para un equipo legal que prefiere revisar antes.`},
+   {text:`Mejor que decida usted sin necesidad de que legal revise todo de nuevo.`, grade:`evitar`, feedback:`Evitar: intenta saltarse un proceso interno legítimo del cliente.`}]},
+ ],
+ outcomes:{success:`Paula dice: "De acuerdo, lo mando a firma con legal." — Cierre exitoso.`,
+  failSoft:`Paula responde: "Legal quiere revisar un par de cláusulas más, seguimos la otra semana." — Cierre pendiente.`,
+  failCritical:`Paula se aleja: "Eso de usar nuestra información con otros clientes es un problema serio, no seguimos." — Se cae el cierre.`}},
+
+{title:`5 · Diego`, persona:`Recibió la propuesta del diagnóstico focalizado y quiere cerrar.`,
+ steps:[
+  {client:`"El focalizado me convenció, pero ¿hay algún descuento si además contrato Check después?"`, options:[
+   {text:`Hoy no tengo una condición de descuento cruzado confirmada; lo que sí existe es el descuento si sube de un focalizado a Core completo.`, grade:`ideal`, feedback:`Correcto: honesto sobre lo confirmado en el método, sin inventar condiciones.`},
+   {text:`Lo puedo consultar con el equipo comercial y le confirmo.`, grade:`aceptable`, feedback:`Aceptable y prudente, aunque no resuelve la duda en el momento.`},
+   {text:`Sí, claro, le hago un 20% de descuento en Check si firma hoy el focalizado.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: inventa una condición comercial no autorizada.`}]},
+  {client:`"Ya. ¿Y el pago, cómo se estructura para el focalizado?"`, options:[
+   {text:`Igual que los demás servicios de pago único: 50% al inicio y 50% contra entrega del informe aprobado.`, grade:`ideal`, feedback:`Correcto: condición estándar real.`},
+   {text:`Se puede conversar en cuotas si lo prefiere.`, grade:`aceptable`, feedback:`Aceptable como flexibilidad comercial razonable.`},
+   {text:`Tiene que pagar todo por adelantado, sin excepción.`, grade:`evitar`, feedback:`Evitar: más rígido que la condición estándar (50/50) sin necesidad.`}]},
+  {client:`"Bien, entonces avancemos. ¿Qué firmamos?"`, options:[
+   {text:`Le envío el contrato corto para el diagnóstico focalizado, con el alcance y precio que ya conversamos.`, grade:`ideal`, feedback:`Correcto: cierre alineado a lo efectivamente acordado.`},
+   {text:`Le envío un contrato general, después ajustamos el alcance específico.`, grade:`aceptable`, feedback:`Aceptable, funcional pero menos preciso.`},
+   {text:`Firmemos primero el paquete completo, es más simple administrativamente.`, grade:`evitar`, feedback:`Evitar: contradice lo que el cliente decidió comprar.`}]},
+ ],
+ outcomes:{success:`Diego dice: "Ya, mándeme el contrato del focalizado." — Cierre exitoso.`,
+  failSoft:`Diego responde: "Lo converso con mi socio y le confirmo." — Cierre pendiente.`,
+  failCritical:`Diego desconfía: "Ese descuento improvisado no me da confianza, prefiero pausar esto." — Se cae el cierre.`}},
+
+{title:`6 · Andrea`, persona:`Aceptó avanzar, pero quiere resolver dudas finales de seguridad antes de firmar.`,
+ steps:[
+  {client:`"Antes de firmar, ¿quién dentro de su equipo va a tener acceso a nuestras cartolas?"`, options:[
+   {text:`Sólo el analista asignado a su caso y el equipo que ejecuta el diagnóstico; queda definido en el contrato quién tiene acceso.`, grade:`ideal`, feedback:`Correcto: responde con precisión sobre control de acceso.`},
+   {text:`El equipo interno en general, somos pocos.`, grade:`aceptable`, feedback:`Aceptable, pero menos preciso que remitir al contrato.`},
+   {text:`Eso varía según la carga de trabajo del mes.`, grade:`evitar`, feedback:`Evitar: genera la sensación de que el acceso no está controlado.`}]},
+  {client:`"¿Y si hay una brecha de seguridad, qué pasa exactamente?"`, options:[
+   {text:`Tenemos un procedimiento escrito para notificar cualquier brecha dentro de 72 horas, como exige la Ley 21.719.`, grade:`ideal`, feedback:`Correcto: describe el procedimiento real.`},
+   {text:`Eso sería un caso excepcional, pero lo resolveríamos rápido.`, grade:`aceptable`, feedback:`Aceptable en tono, sin el procedimiento concreto.`},
+   {text:`Eso no nos ha pasado nunca, así que no hay protocolo definido para eso.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: admitir que no existe protocolo formal es una alarma seria acá.`}]},
+  {client:`"Ok, con eso más claro. ¿Firmamos entonces?"`, options:[
+   {text:`Le dejo el contrato listo con las cláusulas de confidencialidad y retención de datos que acabamos de conversar.`, grade:`ideal`, feedback:`Correcto: refuerza justo lo que preocupaba a la clienta.`},
+   {text:`Le envío el contrato estándar, es el mismo para todos los clientes.`, grade:`aceptable`, feedback:`Aceptable, pero pierde la oportunidad de reforzar lo conversado.`},
+   {text:`Firmemos rápido, ya quedó todo claro.`, grade:`evitar`, feedback:`Evitar: apura un cierre que se beneficiaría de reforzar por escrito lo conversado.`}]},
+ ],
+ outcomes:{success:`Andrea dice: "De acuerdo, mándeme el contrato así detallado." — Cierre exitoso.`,
+  failSoft:`Andrea responde: "Lo reviso con la familia una vez más." — Cierre pendiente.`,
+  failCritical:`Andrea se retracta: "Si no tienen protocolo para eso, mejor no seguimos." — Se cae el cierre.`}},
+
+{title:`7 · Cristóbal`, persona:`Quiere cerrar, pero antes vuelve a tocar el tema de hallazgos delicados.`,
+ steps:[
+  {client:`"Antes de firmar, quiero que quede clarísimo por escrito qué hacen si encuentran algo delicado."`, options:[
+   {text:`Eso puede quedar explícito en el contrato: señalamos y cuantificamos, derivamos a un profesional si corresponde, pero no ejecutamos ni denunciamos.`, grade:`ideal`, feedback:`Correcto: ofrece dejarlo formalizado por escrito, reforzando confianza.`},
+   {text:`Se lo puedo explicar de nuevo verbalmente, si le sirve.`, grade:`aceptable`, feedback:`Aceptable, pero no ofrece dejarlo por escrito.`},
+   {text:`Eso ya se lo expliqué, no hace falta repetirlo.`, grade:`evitar`, feedback:`Evitar: resta paciencia justo con un cliente que necesita reafirmación.`}]},
+  {client:`"¿Y esa cláusula la puede revisar mi abogado antes de firmar?"`, options:[
+   {text:`Por supuesto, con gusto le enviamos el contrato con tiempo para que su abogado lo revise antes de firmar.`, grade:`ideal`, feedback:`Correcto: respeta el proceso de revisión legal del cliente.`},
+   {text:`Puede, aunque no debería haber problemas.`, grade:`aceptable`, feedback:`Aceptable, aunque suena a restarle importancia a la revisión legal.`},
+   {text:`Mejor evitemos meter abogados, así avanzamos más rápido.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: evitar una revisión legal legítima genera sospecha inmediata.`}]},
+  {client:`"Bien, con eso resuelto, ¿firmamos?"`, options:[
+   {text:`Le preparo el contrato con esa cláusula bien explícita, para que su abogado lo revise y firmemos después.`, grade:`ideal`, feedback:`Correcto: cierre ordenado y transparente.`},
+   {text:`Firmemos ahora, el detalle legal se ajusta después si hace falta.`, grade:`aceptable`, feedback:`Aceptable, pero invierte el orden que el propio cliente pidió.`},
+   {text:`Firmemos hoy mismo, sin esperar al abogado.`, grade:`evitar`, feedback:`Evitar: ignora una condición explícita que el cliente pidió.`}]},
+ ],
+ outcomes:{success:`Cristóbal dice: "Ya, mándemelo, mi abogado lo revisa esta semana y firmamos." — Cierre exitoso.`,
+  failSoft:`Cristóbal responde: "Espero que mi abogado lo revise antes de decidir." — Cierre pendiente.`,
+  failCritical:`Cristóbal se cierra: "Si no quieren que mi abogado revise esto, mejor no seguimos." — Se cae el cierre.`}},
+
+{title:`9 · Jorge`, persona:`Quiere cerrar, pero antes pregunta por la logística de la revisión humana.`,
+ steps:[
+  {client:`"Usted me dijo que un analista revisa todo. ¿Eso queda en el contrato también?"`, options:[
+   {text:`Sí, podemos dejar explícito que el informe final se entrega con validación de un analista senior antes de llegar a usted.`, grade:`ideal`, feedback:`Correcto: refuerza por escrito justo lo que resolvió su escepticismo.`},
+   {text:`Normalmente no se detalla tanto en el contrato, pero así funciona igual.`, grade:`aceptable`, feedback:`Aceptable, pero pierde la oportunidad de formalizarlo.`},
+   {text:`Eso es más un detalle operativo interno, no necesita estar en el contrato.`, grade:`evitar`, feedback:`Evitar: resta peso justo al punto que más le importaba al cliente.`}]},
+  {client:`"¿Y quién firma el informe al final, la IA o la persona?"`, options:[
+   {text:`El informe lo firma el analista senior responsable del caso; la IA es la herramienta, no la responsable final.`, grade:`ideal`, feedback:`Correcto: aclara con precisión la responsabilidad real.`},
+   {text:`Se firma como equipo, en general.`, grade:`aceptable`, feedback:`Aceptable, pero menos preciso sobre quién asume la responsabilidad.`},
+   {text:`En la práctica, el informe lo genera directamente el sistema de IA.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: revive exactamente la desconfianza inicial de Jorge en el peor momento.`}]},
+  {client:`"Ya, con eso más claro. ¿Firmamos?"`, options:[
+   {text:`Le dejo el contrato con esa validación humana bien explícita, y coordinamos la firma cuando quiera.`, grade:`ideal`, feedback:`Correcto: cierre que consolida la confianza construida.`},
+   {text:`Le envío el contrato estándar no más.`, grade:`aceptable`, feedback:`Aceptable, funcional pero menos reforzante.`},
+   {text:`Firmemos rápido antes de que se compliquen más dudas.`, grade:`evitar`, feedback:`Evitar: transmite apuro poco profesional justo en el cierre.`}]},
+ ],
+ outcomes:{success:`Jorge dice: "Ya, con eso por escrito me quedo tranquilo, mándelo." — Cierre exitoso.`,
+  failSoft:`Jorge responde: "Déjeme pensarlo un poco más." — Cierre pendiente.`,
+  failCritical:`Jorge se cierra: "Si al final es la IA la que decide, volvemos a lo mismo de siempre. Mejor no." — Se cae el cierre.`}},
+
+{title:`10 · Camila`, persona:`Recibió la propuesta y quiere cerrar rápido, negociando plazo.`,
+ steps:[
+  {client:`"¿Hay alguna forma de acelerar el plazo de 2-3 semanas para mi caso?"`, options:[
+   {text:`Podemos priorizar su caso dentro de ese rango, pero no podemos saltarnos la validación rigurosa que da la confiabilidad del informe.`, grade:`ideal`, feedback:`Correcto: ofrece flexibilidad real sin comprometer el rigor del método.`},
+   {text:`Vemos qué se puede hacer, priorizamos su caso.`, grade:`aceptable`, feedback:`Aceptable, vago pero razonable.`},
+   {text:`Por usted, lo tenemos listo en una semana.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: promete un plazo que contradice el método.`}]},
+  {client:`"Ok. ¿Y si necesito un avance parcial antes de que esté listo el informe completo?"`, options:[
+   {text:`Podemos compartir avances de alcance mientras se completa la validación, dejando claro que son preliminares hasta la confirmación final.`, grade:`ideal`, feedback:`Correcto: transparencia sin presentar hallazgos no validados como definitivos.`},
+   {text:`Se lo mostramos todo junto al final, es más ordenado.`, grade:`aceptable`, feedback:`Aceptable, pero no responde bien a la urgencia real de Camila.`},
+   {text:`Le paso avances como si ya fueran definitivos.`, grade:`evitar`, feedback:`Evitar: contradice el método de validación antes de confirmar hallazgos.`}]},
+  {client:`"Bien, entonces avancemos. ¿Firmamos?"`, options:[
+   {text:`Le mando el contrato hoy mismo, así partimos cuanto antes con la Etapa 2.`, grade:`ideal`, feedback:`Correcto: cierre ágil acorde a la urgencia real de la clienta.`},
+   {text:`Le envío el contrato esta semana.`, grade:`aceptable`, feedback:`Aceptable, pero menos ágil de lo que la situación amerita.`},
+   {text:`Firmamos la próxima semana con más calma.`, grade:`evitar`, feedback:`Evitar: ignora la urgencia real que motivó todo el proceso.`}]},
+ ],
+ outcomes:{success:`Camila dice: "Perfecto, mándemelo ahora, firmo hoy mismo." — Cierre exitoso.`,
+  failSoft:`Camila responde: "Necesito verlo con más calma, le aviso." — Cierre pendiente.`,
+  failCritical:`Camila se frustra: "Con esa promesa de una semana que después no se cumple, mejor no seguimos." — Se cae el cierre.`}},
+
+{title:`12 · Soledad`, persona:`Presentó la propuesta al directorio y vuelve con preguntas antes de cerrar.`,
+ steps:[
+  {client:`"El directorio pregunta si pueden exponerles el alcance directamente a ellos antes de firmar."`, options:[
+   {text:`Con gusto, podemos hacer una presentación breve al directorio antes de la firma, enfocada en alcance, plazo y qué esperar del informe.`, grade:`ideal`, feedback:`Correcto: se adapta a la gobernanza real del cliente.`},
+   {text:`Prefiero que usted misma les presente, para no involucrarnos tanto.`, grade:`aceptable`, feedback:`Aceptable, pero pierde la oportunidad de generar confianza directa.`},
+   {text:`Mejor evitemos esa reunión, así se firma más rápido.`, grade:`evitar`, critical:true, feedback:`Evitar crítico: evita al órgano que realmente decide.`}]},
+  {client:`"El directorio también preguntó por los límites de responsabilidad si algo sale mal en el análisis."`, options:[
+   {text:`Eso queda explícito en el contrato de 1-2 páginas: alcance, plazo, precio y límites de responsabilidad.`, grade:`ideal`, feedback:`Correcto: remite al mecanismo contractual real.`},
+   {text:`Eso lo vemos si llega a pasar algo.`, grade:`aceptable`, feedback:`Aceptable, pero menos preciso frente a un directorio.`},
+   {text:`Eso normalmente no se detalla tanto para no complicar el contrato.`, grade:`evitar`, feedback:`Evitar: un directorio esperaría ese nivel de detalle antes de aprobar.`}]},
+  {client:`"Con la presentación y esas cláusulas claras, creo que aprueban. ¿Cómo seguimos?"`, options:[
+   {text:`Coordinamos la presentación al directorio esta semana, y en paralelo preparamos el contrato para firma inmediata tras su aprobación.`, grade:`ideal`, feedback:`Correcto: cierre bien secuenciado para un proceso de decisión colegiado.`},
+   {text:`Le mando el contrato de una vez, para adelantar.`, grade:`aceptable`, feedback:`Aceptable, pero se adelanta a un paso que el cliente dejó claro que necesita primero.`},
+   {text:`Mejor que usted decida sin esperar al directorio, para no atrasarnos.`, grade:`evitar`, feedback:`Evitar: ignora el proceso de gobierno corporativo que la propia clienta puso como condición.`}]},
+ ],
+ outcomes:{success:`Soledad dice: "De acuerdo, coordinemos la presentación esta semana." — Cierre exitoso.`,
+  failSoft:`Soledad responde: "Llevo esto al directorio y les cuento después." — Pendiente de aprobación colegiada.`,
+  failCritical:`Soledad se pone firme: "Acá no nos saltamos al directorio, mejor lo dejamos aquí." — Se cae el cierre.`}},
+];
+
+// ======================= STATE =======================
+let quizChoices = new Array(quiz.length).fill(null);
+let diagResult = new Array(casesDiag.length).fill(null); // null | 'success' | 'failSoft' | 'failCritical'
+let closeResult = new Array(casesClose.length).fill(null);
+let runner = null; // {list, caseIndex, step, strikes, choices:[]}
+
+// ======================= TABS =======================
+function showTab(tab){
+  document.getElementById('quizTab').classList.toggle('hidden', tab!=='quiz');
+  document.getElementById('diagTab').classList.toggle('hidden', tab!=='diag');
+  document.getElementById('closeTab').classList.toggle('hidden', tab!=='close');
+  document.getElementById('tabQuizBtn').classList.toggle('active', tab==='quiz');
+  document.getElementById('tabDiagBtn').classList.toggle('active', tab==='diag');
+  document.getElementById('tabCloseBtn').classList.toggle('active', tab==='close');
+}
+
+// ======================= UTIL =======================
+function shuffledIndices(n){
+  const arr = Array.from({length:n}, (_,i)=>i);
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ======================= QUIZ =======================
+function renderQuiz(){
+  const list = document.getElementById('quizList');
+  list.innerHTML = '';
+  quiz.forEach((item, qi)=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+    const head = document.createElement('div');
+    head.innerHTML = `<span class="qnum">Pregunta ${qi+1} de ${quiz.length}</span><div class="qhead">${item.q}</div>`;
+    card.appendChild(head);
+    shuffledIndices(item.options.length).forEach(oi=>{
+      const btn = document.createElement('button');
+      btn.className = 'opt';
+      btn.textContent = item.options[oi];
+      btn.onclick = ()=> selectQuiz(qi, oi);
+      btn.id = `q${qi}o${oi}`;
+      card.appendChild(btn);
+    });
+    const exp = document.createElement('div');
+    exp.className = 'explain';
+    exp.id = 'qexp'+qi;
+    exp.textContent = item.explain;
+    card.appendChild(exp);
+    list.appendChild(card);
+  });
+  updateQuizScore();
+}
+function selectQuiz(qi, oi){
+  quizChoices[qi] = oi;
+  for(let o=0;o<quiz[qi].options.length;o++){
+    document.getElementById(`q${qi}o${o}`).classList.toggle('chosen', o===oi);
+  }
+  updateQuizScore();
+}
+function updateQuizScore(){
+  document.getElementById('quizAnswered').textContent = quizChoices.filter(c=>c!==null).length;
+}
+function revealAllQuiz(){
+  quiz.forEach((item, qi)=>{
+    const chosen = quizChoices[qi];
+    item.options.forEach((optText, oi)=>{
+      const el = document.getElementById(`q${qi}o${oi}`);
+      el.disabled = true;
+      el.classList.remove('chosen');
+      if(oi===item.correct) el.classList.add('correct');
+      else if(oi===chosen) el.classList.add('incorrect');
+    });
+    document.getElementById('qexp'+qi).classList.add('show');
+  });
+  document.getElementById('quizCorrect').textContent = quiz.filter((item,qi)=>quizChoices[qi]===item.correct).length;
+}
+
+// ======================= CASE ENGINE (shared by diag & close) =======================
+function listConfig(list){
+  return list==='diag'
+    ? {data:casesDiag, results:diagResult, listViewId:'diagListView', runnerViewId:'diagRunnerView', doneId:'diagDone', winId:'diagWin', loseId:'diagLose', successLabel:'Propuesta aceptada', loseLabel:'No avanzó'}
+    : {data:casesClose, results:closeResult, listViewId:'closeListView', runnerViewId:'closeRunnerView', doneId:'closeDone', winId:'closeWin', loseId:'closeLose', successLabel:'Contrato firmado', loseLabel:'No se cerró'};
+}
+function renderCaseList(list){
+  const cfg = listConfig(list);
+  const grid = document.getElementById(cfg.listViewId);
+  grid.innerHTML = '';
+  cfg.data.forEach((c, ci)=>{
+    const res = cfg.results[ci];
+    const statusClass = res==='success' ? 'win' : (res ? 'lose' : '');
+    const statusText = res==='success' ? cfg.successLabel : (res ? cfg.loseLabel : 'Pendiente');
+    const btn = document.createElement('button');
+    btn.className = 'casebtn';
+    const tag = c.fast ? `<span class="tag">Ya aceptó por correo</span>` : (list==='close' ? `<span class="tag">Reunión técnica</span>` : '');
+    btn.innerHTML = `${tag}<div class="ctitle">${c.title}</div><div class="cpersona">${c.persona}</div><span class="status ${statusClass}">${statusText}</span>`;
+    btn.onclick = ()=> startCase(list, ci);
+    grid.appendChild(btn);
+  });
+  updateGlobalCounts(list);
+}
+function startCase(list, ci){
+  runner = {list, caseIndex:ci, step:0, strikes:0, choices:[], ended:false};
+  const cfg = listConfig(list);
+  document.getElementById(cfg.listViewId).classList.add('hidden');
+  const rv = document.getElementById(cfg.runnerViewId);
+  rv.classList.remove('hidden');
+  renderRunnerStep();
+}
+function backToCaseList(){
+  const list = runner.list;
+  runner = null;
+  const cfg = listConfig(list);
+  document.getElementById(cfg.listViewId).classList.remove('hidden');
+  document.getElementById(cfg.runnerViewId).classList.add('hidden');
+  renderCaseList(list);
+}
+function renderRunnerStep(){
+  const cfg = listConfig(runner.list);
+  const c = cfg.data[runner.caseIndex];
+  const view = document.getElementById(cfg.runnerViewId);
+  const step = c.steps[runner.step];
+  let dots = '';
+  for(let i=0;i<c.steps.length;i++) dots += `<span class="${i<runner.step ? 'done' : ''}"></span>`;
+  view.innerHTML = `<span class="backlink" onclick="backToCaseList()">&larr; Volver a la lista</span>
+    <h2 style="font-size:19px;margin-bottom:6px">${c.title}</h2>
+    <p style="color:var(--ink2);font-size:13.5px;margin-bottom:14px">${c.persona}</p>
+    <div class="stepdots">${dots}</div>
+    <div class="bubble"><div class="who">Cliente</div>${step.client}</div>
+    <div id="stepOptions"></div>`;
+  const optWrap = document.createElement('div');
+  shuffledIndices(step.options.length).forEach(oi=>{
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.textContent = step.options[oi].text;
+    btn.id = 'stepopt'+oi;
+    btn.onclick = ()=> chooseStepOption(oi);
+    optWrap.appendChild(btn);
+  });
+  const fb = document.createElement('div');
+  fb.className = 'explain';
+  fb.id = 'stepFeedback';
+  optWrap.appendChild(fb);
+  const cont = document.createElement('button');
+  cont.className = 'bigbtn hidden';
+  cont.id = 'stepContinue';
+  cont.onclick = ()=> advanceAfterChoice();
+  optWrap.appendChild(cont);
+  view.appendChild(optWrap);
+}
+function chooseStepOption(oi){
+  const cfg = listConfig(runner.list);
+  const c = cfg.data[runner.caseIndex];
+  const step = c.steps[runner.step];
+  const opt = step.options[oi];
+  runner.choices[runner.step] = oi;
+  if(opt.grade==='evitar' && !opt.critical) runner.strikes++;
+  if(opt.critical) runner.criticalHit = true;
+  step.options.forEach((o,i)=>{
+    const el = document.getElementById('stepopt'+i);
+    el.disabled = true;
+    if(i===oi) el.classList.add('chosen');
+  });
+  const fb = document.getElementById('stepFeedback');
+  const label = opt.grade === 'ideal' ? 'Ideal' : opt.grade === 'aceptable' ? 'Aceptable' : 'Evitar';
+  fb.innerHTML = `<span class="badge ${opt.grade}">${label}</span><br><br>${opt.feedback}`;
+  fb.classList.add('show');
+  const cont = document.getElementById('stepContinue');
+  const isLast = runner.step === c.steps.length-1;
+  cont.textContent = (opt.critical || isLast) ? 'Ver resultado' : 'Siguiente';
+  cont.classList.remove('hidden');
+}
+function advanceAfterChoice(){
+  const cfg = listConfig(runner.list);
+  const c = cfg.data[runner.caseIndex];
+  if(runner.criticalHit){ finishCase('failCritical'); return; }
+  const isLast = runner.step === c.steps.length-1;
+  if(isLast){
+    finishCase(runner.strikes >= 2 ? 'failSoft' : 'success');
+  } else {
+    runner.step++;
+    renderRunnerStep();
+  }
+}
+function finishCase(outcomeKey){
+  const cfg = listConfig(runner.list);
+  const ci = runner.caseIndex;
+  const c = cfg.data[ci];
+  cfg.results[ci] = outcomeKey==='success' ? 'success' : 'lose';
+  const isWin = outcomeKey==='success';
+  let rows = '';
+  c.steps.forEach((step, si)=>{
+    if(runner.choices[si]===undefined) return;
+    const opt = step.options[runner.choices[si]];
+    const label = opt.grade === 'ideal' ? 'Ideal' : opt.grade === 'aceptable' ? 'Aceptable' : 'Evitar';
+    rows += `<div class="summaryrow">
+      <div class="client">Cliente: ${step.client}</div>
+      <div class="chosen">${opt.text} <span class="badge ${opt.grade}">${label}</span></div>
+      <div class="fb">${opt.feedback}</div>
+    </div>`;
+  });
+  const view = document.getElementById(cfg.runnerViewId);
+  view.innerHTML = `<span class="backlink" onclick="backToCaseList()">&larr; Volver a la lista</span>
+    <h2 style="font-size:19px;margin-bottom:10px">${c.title} — Resultado</h2>
+    <div class="outcome ${isWin ? 'win' : 'lose'}">
+      <span class="tag2">${isWin ? '✓ Éxito' : '✕ No se logró'}</span>
+      ${c.outcomes[outcomeKey]}
+    </div>
+    <div class="card">${rows}</div>
+    <button class="bigbtn" onclick="startCase('${runner.list}', ${ci})">Repetir</button>
+    <button class="bigbtn secondary" onclick="backToCaseList()">Volver a la lista</button>`;
+}
+function updateGlobalCounts(list){
+  const cfg = listConfig(list);
+  document.getElementById(cfg.doneId).textContent = cfg.results.filter(r=>r!==null).length;
+  document.getElementById(cfg.winId).textContent = cfg.results.filter(r=>r==='success').length;
+  document.getElementById(cfg.loseId).textContent = cfg.results.filter(r=>r==='lose').length;
+}
+
+// ======================= INIT =======================
+renderQuiz();
+renderCaseList('diag');
+renderCaseList('close');
+</script>
+</body>
+</html>
